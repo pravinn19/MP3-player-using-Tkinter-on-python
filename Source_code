@@ -1,0 +1,314 @@
+from tkinter import *
+import pygame
+from tkinter import filedialog
+import time
+from mutagen.mp3 import MP3
+import tkinter.ttk as ttk
+root = Tk()
+root.title('MP3 Player')
+root.geometry("800x800")
+#initialize pygame mixer
+pygame.mixer.init()
+#Song time length info
+def play_time():
+ #doubletiming
+ if stopped:
+ return
+ #current time info
+ current_time=pygame.mixer.music.get_pos()/1000
+ #throwup temp label to get data
+ #slider_label.config(text=f'slider: {int(my_slider.get())} and song pos:
+{int(current_time)}')
+ #convert to time format
+ converted_time = time.strftime ('%M:%S', time.gmtime(current_time))
+ #get song length from mutagen
+ #current_song=pl.curselection()
+ song=pl.get(ACTIVE)
+ #directory sturcture to play mp3
+ song=f'C:/GUI/audios/{song}.mp3'
+ #load song from mutagen
+ song_mut=MP3(song)
+ #get song length
+ global song_length
+ song_length=song_mut.info.length
+ #convert to time format
+ converted_song_time = time.strftime ('%M:%S', time.gmtime(song_length))
+
+ #incrementing by 1
+ current_time+=1
+  if int(my_slider.get())==int(song_length):
+ status_bar.config(text=f'Time elapsed: {converted_song_time} ')
+ elif paused:
+ pass
+
+ elif int(my_slider.get()) == int(current_time):
+ #update silderto position
+ slider_position = int(song_length)
+ my_slider.config(to=slider_position, value=int(current_time))
+ else:
+ #update silderto position
+ slider_position = int(song_length)
+ my_slider.config(to=slider_position, value=int(my_slider.get()))
+ #convert to time format
+ converted_time = time.strftime ('%M:%S', time.gmtime(int(my_slider.get())))
+ #output time to status bar
+ status_bar.config(text=f'{converted_time} of {converted_song_time} ')
+ #move this thing along by one second
+ next_time = int(my_slider.get())+1
+ my_slider.config(value=next_time)
+
+ #output time to status bar
+ #status_bar.config(text=f'{converted_time} of {converted_song_time} ')
+ #update slider position value to current song position
+ #my_slider.config( value=int(current_time))
+
+ #update live time
+ status_bar.after(1000,play_time)
+#add song function
+def add_song():
+ song=filedialog.askopenfilename(initialdir='audios/',title='Choose a
+song',filetypes=(("mp3 files","*.mp3"),))
+ song=song.replace("C:/GUI/audios/","")
+ song=song.replace(".mp3","")
+
+ #inserting to playlist
+ pl.insert(END,song)
+ #adding many songs function
+def add_songs():
+ songs=filedialog.askopenfilenames(initialdir='audios/',title='Choose a
+song',filetypes=(("mp3 files","*.mp3"),))
+ for song in songs:
+ song=song.replace("C:/GUI/audios/","")
+ song=song.replace(".mp3","")
+#inserting in playlist
+ pl.insert(END,song)
+#removing a song function
+def remove_song():
+ stop()
+ pl.delete(ANCHOR)
+ pygame.mixer.music.stop()
+#removing all songs
+def remove_songs():
+ stop()
+ pl.delete(0,END)
+ pygame.mixer.music.stop()
+#openlyrics from file
+def open_lyrics():
+ next_one=pl.curselection()
+ next_one=next_one[0]
+ song=pl.get(next_one)
+ try:
+ file = open(f"{song}.txt")
+ file.seek(0)
+ lines = file.read()
+ print(lines,type(lines))
+ txtbox1.config(state="normal")
+ txtbox1.delete("1.0","end")
+ txtbox1.insert(INSERT,lines)
+ txtbox1.config(state = "disabled")
+ except:
+ print(song,"error")
+#play the selected song
+def play():
+ #set stopped to false so song can play
+ global stopped
+ stopped=False
+ song = pl.get(ACTIVE)
+ songname = song
+ song=f'C:/GUI/audios/{song}.mp3'
+ pygame.mixer.music.load(song)
+ pygame.mixer.music.play(loops=0)
+ #calling the song time info function
+ play_time()
+ #update silderto position
+ #slider_position = int(song_length)
+ #my_slider.config(to=slider_position, value=0)
+
+global stopped
+stopped=True
+#stop the song
+def stop():
+ #reset slider and status bar
+ status_bar.config(text='')
+ my_slider.config(value=0)
+ #stop song from playing
+ pygame.mixer.music.stop()
+ pl.selection_clear(ACTIVE)
+ #clear songtime from statusbar
+ status_bar.config(text='')
+ #set stop variable to true
+ global stopped
+ stopped = True
+#global pause variable
+global paused
+paused = False
+ #pause and unpause the song ,
+def pause(is_paused):
+ global paused
+ paused = is_paused
+ if paused:
+ #unpause
+ pygame.mixer.music.unpause()
+ paused=False
+ else:
+ #pause
+ pygame.mixer.music.pause()
+ paused=True
+#create slider function
+def slide(x):
+ ##slider_label.config(text=f'{int(my_slider.get())} of {int(song_length)}')
+ song = pl.get(ACTIVE)
+ song=f'C:/GUI/audios/{song}.mp3'
+ pygame.mixer.music.load(song)
+ pygame.mixer.music.play(loops=0,start=int(my_slider.get()))
+#forward/next song
+def nextsong():
+ txtbox1.config(state="normal")
+ txtbox1.delete("1.0","end")
+ txtbox1.config(state="disabled")
+ status_bar.config(text='')
+ my_slider.config(value=0)
+ next_one=pl.curselection()
+ next_one=next_one[0]+1
+ song=pl.get(next_one)
+ songname = song
+ song=f'C:/GUI/audios/{song}.mp3'
+ pygame.mixer.music.load(song)
+ pygame.mixer.music.play(loops=0)
+ #clear active bar in playlist
+ pl.selection_clear(0,END)
+ #activate/select next song in playlist
+ pl.activate(next_one)
+ pl.selection_set(next_one,last=None)
+#previous song
+def previoussong():
+ txtbox1.config(state="normal")
+ txtbox1.delete("1.0","end")
+ txtbox1.config(state="disabled")
+ status_bar.config(text='')
+ my_slider.config(value=0)
+ next_one=pl.curselection()
+ next_one=next_one[0]-1
+ song=pl.get(next_one)
+ songname = song
+ song=f'C:/GUI/audios/{song}.mp3'
+pygame.mixer.music.load(song)
+ pygame.mixer.music.play(loops=0)
+ #clear active bar in playlist
+ pl.selection_clear(0,END)
+ #activate/select previous song in playlist
+ pl.activate(next_one)
+ pl.selection_set(next_one,last=None)
+#create volume function
+def volume(x):
+ pygame.mixer.music.set_volume(volume_slider.get())
+#text file function
+def save_file(filename,lyrics):
+ file = open(f"{filename}.txt","w+")
+ file.write(lyrics)
+ file.seek(0)
+ lines = file.readlines()
+ file.close()
+ return lines
+#save lyrics function
+def save_lyrics():
+ lyrics = txtbox.get(1.0,END)
+ song = pl.get(ACTIVE)
+ if song != "":
+ save_file(song,lyrics)
+ txtbox.delete("1.0","end")
+#main_master frame
+main_master_frame= Frame(root)
+main_master_frame.pack()
+#create master frame
+master_frame = Frame(main_master_frame)
+master_frame.grid(row=0,column=0)
+#creating master_frame1 for lyrics
+master_frame1 = Frame(main_master_frame)
+master_frame1.grid(row=0,column=1)
+#create playlist
+pl = Listbox(master_frame,bg= "dodgerblue"
+,fg='white',width=60,selectbackground='white' ,selectforeground='black')
+pl.grid(row=0,column=0)
+#player control buttons defining
+backbtn_img=PhotoImage(file='images/backward.png')
+forwardbtn_img=PhotoImage(file='images/forward.png')
+pausebtn_img=PhotoImage(file='images/pause.png')
+playbtn_img=PhotoImage(file='images/play.png')
+stopbtn_img=PhotoImage(file='images/stop.png')
+#player control frame
+controls_frame= Frame(master_frame)
+controls_frame.grid(row=1,column=0)
+#create volume_frame frame
+volume_frame = LabelFrame(master_frame,text='volume')
+volume_frame.grid(row=0,column=1,padx=20)
+#create lyrics_frame frame
+lyrics_frame = LabelFrame(master_frame1,text='lyrics')
+lyrics_frame.grid(row=0,column=0)
+#create player control buttons
+back_button = Button(controls_frame, image=backbtn_img,
+borderwidth=0,command=previoussong)
+forward_button = Button(controls_frame, image=forwardbtn_img,
+borderwidth=0,command=nextsong)
+pause_button = Button(controls_frame, image=pausebtn_img,
+borderwidth=0,command=lambda: pause(paused))
+play_button = Button(controls_frame, image=playbtn_img,
+borderwidth=0,command=play)
+stop_button = Button(controls_frame, image=stopbtn_img,
+borderwidth=0,command=stop)
+back_button.grid(row=0,column=0,padx=5)
+forward_button.grid(row=0,column=4,padx=5)
+pause_button.grid(row=0,column=3,padx=5)
+play_button.grid(row=0,column=2,padx=5)
+stop_button.grid(row=0,column=1,padx=5)
+#create menu
+my_menu = Menu(root)
+root.config(menu=my_menu)
+#adding "add song" menu
+add_song_menu= Menu(my_menu)
+my_menu.add_cascade(label="Add Songs",menu=add_song_menu)
+add_song_menu.add_command(label="Add a song to
+playlist",command=add_song)
+add_song_menu.add_command(label="Add many songs to
+playlist",command=add_songs)
+#create delete song menu
+remove_song_menu= Menu(my_menu)
+my_menu.add_cascade(label='Remove songs',menu=remove_song_menu)
+remove_song_menu.add_command(label='remove a song from
+playlist',command=remove_song)
+remove_song_menu.add_command(label='remove all songs from
+playlist',command=remove_songs)
+#create change colour theme menu
+#Change_colour_theme= Menu(my_menu)
+#my_menu.add_cascade(label='Colour theme',menu=Change_colour_theme)
+#Change_colour_theme.add_command(label='red',command=color_red)
+#Change_colour_theme.add_command(label='blue',command=color_blue)
+#Change_colour_theme.add_command(label='orange',command=color_orange)
+#Change_colour_theme.add_command(label='green',command=color_green)
+#create status bar
+status_bar=Label(root,text=' ',bd=1, relief=GROOVE,anchor=E)
+status_bar.pack(fill=X,side=BOTTOM,ipady=2)
+#create music position slider
+my_slider=ttk.Scale(master_frame,from_=0,to=100,orient=HORIZONTAL,value=0
+,command=slide,length =360)
+my_slider.grid(row=2,column=0,pady=10)
+#create volume slider
+volume_slider=ttk.Scale(volume_frame,from_=0,to=1,orient=VERTICAL,value=1,c
+ommand=volume,length= 125)
+volume_slider.pack(pady=10)
+#create textbox for lyrics
+txtbox=Text(master_frame,width=45,height=5)
+txtbox.grid(row=3,column=0,pady=10)
+#create save button for saving lyrics in textbox
+save_lyrics_button=Button(master_frame,text="Save
+lyrics",command=save_lyrics)
+save_lyrics_button.grid(row=4,column=0)
+#creating a textbox that shows the lyrics
+txtbox1=Text(lyrics_frame,width=40,height=30)
+txtbox1.grid(row=0,column=0)
+txtbox1.config(state="disabled")
+#create display button for displaying lyrics in textbox
+display_lyrics_button=Button(lyrics_frame,text="Display
+lyrics",command=open_lyrics)
+display_lyrics_button.grid(row=1,column=0)
+root.mainloop()
